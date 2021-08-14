@@ -34,7 +34,7 @@ const eval_ast = (ast, env) => {
   }
 
   if (ast instanceof HashMap) {
-    const resolvedHashMap = ast.hashMap.map((e) => EVAL(e, env));
+    const resolvedHashMap = ast.toKeyValues().map((e) => EVAL(e, env));
     return new HashMap(resolvedHashMap);
   }
 

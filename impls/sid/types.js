@@ -50,13 +50,28 @@ class Vector {
 }
 
 class HashMap {
-  constructor(hashMap) {
-    this.hashMap = hashMap;
+  constructor(keyValues) {
+    this.hashMap = new Map();
+
+    for (let i = 0; i < keyValues.length; i += 2) {
+      this.hashMap.set(keyValues[i], keyValues[i + 1]);
+    }
+  }
+
+  toKeyValues() {
+    const keyValues = [];
+    this.hashMap.forEach((v, k) => keyValues.push(k, v));
+    return keyValues;
   }
 
   asString(print_readably) {
-    return `{${this.hashMap
-      .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
+    return `{${[...this.hashMap.entries()]
+      .map(
+        ([k, v]) =>
+          `${k.asString ? k.asString(print_readably) : k.toString()} ${
+            v.asString ? v.asString(print_readably) : v.toString()
+          }`
+      )
       .join(" ")}}`;
   }
 }
