@@ -8,6 +8,10 @@ class List {
       .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
       .join(" ")})`;
   }
+
+  isEmpty() {
+    return this.list.length === 0;
+  }
 }
 
 class Str {
