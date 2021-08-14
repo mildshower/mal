@@ -3,6 +3,10 @@ class List {
     this.list = list;
   }
 
+  isEmpty() {
+    return this.list.length === 0;
+  }
+
   toString() {
     return `(${this.list.map((element) => element.toString()).join(" ")})`;
   }
