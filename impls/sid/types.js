@@ -33,12 +33,24 @@ class Vector {
 }
 
 class HashMap {
-  constructor(hashMap) {
-    this.hashMap = hashMap;
+  constructor(keyValues) {
+    this.hashMap = new Map();
+
+    for (let i = 0; i < keyValues.length; i += 2) {
+      this.hashMap.set(keyValues[i], keyValues[i + 1]);
+    }
+  }
+
+  toKeyValues() {
+    const keyValues = [];
+    this.hashMap.forEach((v, k) => keyValues.push(k, v));
+    return keyValues;
   }
 
   toString() {
-    return `{${this.hashMap.map((element) => element.toString()).join(" ")}}`;
+    return `{${[...this.hashMap.entries()]
+      .map(([k, v]) => `${k.toString()} ${v.toString()}`)
+      .join(" ")}}`;
   }
 }
 
