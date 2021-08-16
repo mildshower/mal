@@ -12,6 +12,10 @@ class List {
   isEmpty() {
     return this.list.length === 0;
   }
+
+  count() {
+    return this.list.length;
+  }
 }
 
 class Str {
@@ -47,6 +51,14 @@ class Vector {
       .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
       .join(" ")}]`;
   }
+
+  isEmpty() {
+    return this.vector.length === 0;
+  }
+
+  count() {
+    return this.vector.length;
+  }
 }
 
 class HashMap {
@@ -73,6 +85,14 @@ class HashMap {
           }`
       )
       .join(" ")}}`;
+  }
+
+  isEmpty() {
+    return this.hashMap.size === 0;
+  }
+
+  count() {
+    return this.hashMap.size;
   }
 }
 
@@ -102,4 +122,18 @@ class Nil {
   }
 }
 
-module.exports = { Str, List, Vector, HashMap, Symbol, Keyword, Nil };
+class Fn {
+  constructor(fn) {
+    this.fn = fn;
+  }
+
+  apply(args) {
+    return this.fn.apply(null, args);
+  }
+
+  toString() {
+    return "#<function>";
+  }
+}
+
+module.exports = { Str, List, Vector, HashMap, Symbol, Keyword, Nil, Fn };
