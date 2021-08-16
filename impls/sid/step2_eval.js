@@ -10,9 +10,11 @@ const rl = readline.createInterface({
 
 const repl_env = {
   "+": (...numbers) => numbers.reduce((total, num) => total + num, 0),
-  "-": (...numbers) => numbers.slice(1).reduce((sub, num) => sub - num, numbers[0]),
+  "-": (...numbers) =>
+    numbers.slice(1).reduce((sub, num) => sub - num, numbers[0]),
   "*": (...numbers) => numbers.reduce((total, num) => total * num, 1),
-  "/": (...numbers) => numbers.slice(1).reduce((div, num) => div / num, numbers[0]),
+  "/": (...numbers) =>
+    numbers.slice(1).reduce((div, num) => div / num, numbers[0]),
   pi: Math.PI,
 };
 
@@ -56,7 +58,7 @@ const EVAL = (ast, env) => {
 };
 
 const PRINT = (ast) => {
-  return pr_str(ast);
+  return pr_str(ast, true);
 };
 
 const rep = (str) => {

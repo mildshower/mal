@@ -57,22 +57,24 @@ const core = {
     return exp.count();
   }),
 
-  prn: new Fn((...exp) => {
-    console.log(exp.map(pr_str).join(" "));
+  prn: new Fn((...exps) => {
+    console.log(exps.map((e) => pr_str(e, true)).join(" "));
     return new Nil();
   }),
 
-  println: new Fn((...exp) => {
-    console.log(exp.map(pr_str).join(" "));
+  println: new Fn((...exps) => {
+    console.log(exps.map((e) => pr_str(e, false)).join(" "));
     return new Nil();
   }),
 
-  "prn-str": new Fn((...exps) => {
-    return exps.map(pr_str).join(" ");
+  "pr-str": new Fn((...exps) => {
+    const str = exps.map((e) => pr_str(e, true)).join(" ");
+    return new Str(str);
   }),
 
   str: new Fn((...exps) => {
-    return exps.map(pr_str).join("");
+    const str = exps.map((e) => pr_str(e, false)).join("");
+    return new Str(str);
   }),
 
   "=": new Fn(deepEqual),

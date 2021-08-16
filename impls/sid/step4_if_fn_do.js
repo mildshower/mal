@@ -127,7 +127,7 @@ const EVAL = (ast, env) => {
 };
 
 const PRINT = (ast) => {
-  return pr_str(ast);
+  return pr_str(ast, true);
 };
 
 const rep = (str) => {

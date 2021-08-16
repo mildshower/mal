@@ -24,7 +24,7 @@ class Str {
   }
 
   asString(print_readably) {
-    if (!print_readably) return `"${this.value}"`;
+    if (!print_readably) return this.value;
 
     return `"${this.value.replace(/\n|\\|"/g, (m) => {
       switch (m) {
