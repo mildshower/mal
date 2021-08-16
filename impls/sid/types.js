@@ -7,6 +7,10 @@ class List {
     return this.list.length === 0;
   }
 
+  count() {
+    return this.list.length;
+  }
+
   toString() {
     return `(${this.list.map((element) => element.toString()).join(" ")})`;
   }
@@ -27,6 +31,14 @@ class Vector {
     this.vector = vector;
   }
 
+  isEmpty() {
+    return this.vector.length === 0;
+  }
+
+  count() {
+    return this.vector.length;
+  }
+
   toString() {
     return `[${this.vector.map((element) => element.toString()).join(" ")}]`;
   }
@@ -45,6 +57,14 @@ class HashMap {
     const keyValues = [];
     this.hashMap.forEach((v, k) => keyValues.push(k, v));
     return keyValues;
+  }
+
+  isEmpty() {
+    return this.hashMap.size === 0;
+  }
+
+  count() {
+    return this.hashMap.size;
   }
 
   toString() {
@@ -80,4 +100,18 @@ class Nil {
   }
 }
 
-module.exports = { Str, List, Vector, HashMap, Symbol, Keyword, Nil };
+class Fn {
+  constructor(fn) {
+    this.fn = fn;
+  }
+
+  apply(args) {
+    return this.fn.apply(null, args);
+  }
+
+  toString() {
+    return "#<function>";
+  }
+}
+
+module.exports = { Str, List, Vector, HashMap, Symbol, Keyword, Nil, Fn };
