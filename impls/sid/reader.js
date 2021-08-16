@@ -62,8 +62,11 @@ const read_atom = (token) => {
   }
 
   if (token.startsWith('"')) {
-    if (!/[^\\]"$/.test(token)) throw new Error("unbalanced");
-    return new Str(token.slice(1, -1));
+    if (!/[^\\]("$|(\\\\)+")$/.test(token)) throw new Error("unbalanced");
+    const escapedStr = token
+      .slice(1, -1)
+      .replace(/\\(.)/g, (_, c) => (c === "n" ? "\n" : c));
+    return new Str(escapedStr);
   }
 
   return new Symbol(token);

@@ -3,8 +3,10 @@ class List {
     this.list = list;
   }
 
-  toString() {
-    return `(${this.list.map((element) => element.toString()).join(" ")})`;
+  asString(print_readably) {
+    return `(${this.list
+      .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
+      .join(" ")})`;
   }
 }
 
@@ -13,8 +15,21 @@ class Str {
     this.value = value;
   }
 
-  toString() {
-    return `"${this.value}"`;
+  asString(print_readably) {
+    if (!print_readably) return `"${this.value}"`;
+
+    return `"${this.value.replace(/\n|\\|"/g, (m) => {
+      switch (m) {
+        case "\n":
+          return "\\n";
+        case "\\":
+          return "\\\\";
+        case '"':
+          return '\\"';
+        default:
+          return m;
+      }
+    })}"`;
   }
 }
 
@@ -23,8 +38,10 @@ class Vector {
     this.vector = vector;
   }
 
-  toString() {
-    return `[${this.vector.map((element) => element.toString()).join(" ")}]`;
+  asString(print_readably) {
+    return `[${this.vector
+      .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
+      .join(" ")}]`;
   }
 }
 
@@ -33,8 +50,10 @@ class HashMap {
     this.hashMap = hashMap;
   }
 
-  toString() {
-    return `{${this.hashMap.map((element) => element.toString()).join(" ")}}`;
+  asString(print_readably) {
+    return `{${this.hashMap
+      .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
+      .join(" ")}}`;
   }
 }
 
@@ -43,7 +62,7 @@ class Symbol {
     this.symbol = symbol;
   }
 
-  toString() {
+  asString() {
     return this.symbol;
   }
 }
@@ -53,13 +72,13 @@ class Keyword {
     this.keyword = keyword;
   }
 
-  toString() {
+  asString() {
     return `:${this.keyword}`;
   }
 }
 
 class Nil {
-  toString() {
+  asString() {
     return "nil";
   }
 }
