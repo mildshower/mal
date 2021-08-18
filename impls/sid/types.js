@@ -1,68 +1,108 @@
-class List {
-  constructor(list) {
-    this.list = list;
-  }
+const { Env } = require("./env");
 
-  asString(print_readably) {
-    return `(${this.list
-      .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
-      .join(" ")})`;
+const getFilteredBindsAndArgs = (rawBinds, rawFnArgs) => {
+  let args = rawFnArgs;
+  let binds = rawBinds;
+  const ampersandPosition = rawBinds.findIndex((e) => e.symbol === "&");
+  if (ampersandPosition >= 0) {
+    args = [
+      ...args.slice(0, ampersandPosition),
+      new List(args.slice([ampersandPosition])),
+    ];
+    binds = [
+      ...rawBinds.slice(0, ampersandPosition),
+      rawBinds[ampersandPosition + 1],
+    ];
   }
+  return [binds, args];
+};
 
-  isEmpty() {
-    return this.list.length === 0;
-  }
-
-  count() {
-    return this.list.length;
+class MalValue {
+  isEqual(other) {
+    return this === other;
   }
 }
 
-class Str {
+class Sequence extends MalValue {
+  constructor(elements) {
+    super();
+    this.elements = elements;
+  }
+
+  isEmpty() {
+    return this.elements.length === 0;
+  }
+
+  count() {
+    return this.elements.length;
+  }
+
+  isEqual(other) {
+    if (other === this) return true;
+
+    return (
+      other instanceof Sequence &&
+      this.count() === other.count() &&
+      this.elements.every((e, i) => {
+        return e instanceof MalValue
+          ? e.isEqual(other.elements[i])
+          : e === other.elements[i];
+      })
+    );
+  }
+
+  asString(print_readably, opening, closing) {
+    return `${opening}${this.elements
+      .map((e) =>
+        e instanceof MalValue ? e.asString(print_readably) : e.toString()
+      )
+      .join(" ")}${closing}`;
+  }
+}
+
+class List extends Sequence {
+  constructor(elements) {
+    super(elements);
+  }
+
+  asString(print_readably) {
+    return super.asString(print_readably, "(", ")");
+  }
+}
+
+class Str extends MalValue {
   constructor(value) {
+    super();
     this.value = value;
   }
 
   asString(print_readably) {
     if (!print_readably) return this.value;
 
-    return `"${this.value.replace(/\n|\\|"/g, (m) => {
-      switch (m) {
-        case "\n":
-          return "\\n";
-        case "\\":
-          return "\\\\";
-        case '"':
-          return '\\"';
-        default:
-          return m;
-      }
-    })}"`;
+    return `"${this.value
+      .replace(/\\/g, "\\\\")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n")}"`;
+  }
+
+  isEqual(other) {
+    return other instanceof Str && other.value === this.value;
   }
 }
 
-class Vector {
-  constructor(vector) {
-    this.vector = vector;
+class Vector extends Sequence {
+  constructor(elements) {
+    super(elements);
   }
 
   asString(print_readably) {
-    return `[${this.vector
-      .map((e) => (e.asString ? e.asString(print_readably) : e.toString()))
-      .join(" ")}]`;
-  }
-
-  isEmpty() {
-    return this.vector.length === 0;
-  }
-
-  count() {
-    return this.vector.length;
+    return super.asString(print_readably, "[", "]");
   }
 }
 
-class HashMap {
+class HashMap extends MalValue {
   constructor(keyValues) {
+    super();
     this.hashMap = new Map();
 
     for (let i = 0; i < keyValues.length; i += 2) {
@@ -80,8 +120,10 @@ class HashMap {
     return `{${[...this.hashMap.entries()]
       .map(
         ([k, v]) =>
-          `${k.asString ? k.asString(print_readably) : k.toString()} ${
-            v.asString ? v.asString(print_readably) : v.toString()
+          `${
+            k instanceof MalValue ? k.asString(print_readably) : k.toString()
+          } ${
+            v instanceof MalValue ? v.asString(print_readably) : v.toString()
           }`
       )
       .join(" ")}}`;
@@ -96,44 +138,72 @@ class HashMap {
   }
 }
 
-class Symbol {
+class Symbol extends MalValue {
   constructor(symbol) {
+    super();
     this.symbol = symbol;
   }
 
   asString() {
     return this.symbol;
   }
+
+  isEqual(other) {
+    return other instanceof Symbol && other.symbol === this.symbol;
+  }
 }
 
-class Keyword {
+class Keyword extends MalValue {
   constructor(keyword) {
+    super();
     this.keyword = keyword;
   }
 
   asString() {
     return `:${this.keyword}`;
   }
+
+  isEqual(other) {
+    return other instanceof Keyword && other.keyword === this.keyword;
+  }
 }
 
-class Nil {
+class Nil extends MalValue {
   asString() {
     return "nil";
   }
+
+  isEqual(other) {
+    return other instanceof Nil;
+  }
 }
 
-class Fn {
-  constructor(fn) {
-    this.fn = fn;
+class Fn extends MalValue {
+  constructor(fnBody, binds, env) {
+    super();
+    this.fnBody = fnBody;
+    this.binds = binds;
+    this.env = env;
   }
 
-  apply(args) {
-    return this.fn.apply(null, args);
-  }
-
-  toString() {
+  asString() {
     return "#<function>";
   }
+
+  generateEnv(fnArgs) {
+    const [binds, args] = getFilteredBindsAndArgs(this.binds, fnArgs);
+    return new Env(this.env, binds, args);
+  }
 }
 
-module.exports = { Str, List, Vector, HashMap, Symbol, Keyword, Nil, Fn };
+module.exports = {
+  Str,
+  List,
+  Vector,
+  HashMap,
+  Symbol,
+  Keyword,
+  Nil,
+  Fn,
+  MalValue,
+};
