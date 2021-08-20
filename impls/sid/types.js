@@ -1,6 +1,6 @@
 const { Env } = require("./env");
 
-const getFilteredBindsAndArgs = (rawBinds, rawFnArgs) => {
+const collateParams = (rawBinds, rawFnArgs) => {
   let args = rawFnArgs;
   let binds = rawBinds;
   const ampersandPosition = rawBinds.findIndex((e) => e.symbol === "&");
@@ -179,11 +179,12 @@ class Nil extends MalValue {
 }
 
 class Fn extends MalValue {
-  constructor(fnBody, binds, env) {
+  constructor(fnBody, binds, env, closedFn) {
     super();
     this.fnBody = fnBody;
     this.binds = binds;
     this.env = env;
+    this.closedFn = closedFn;
   }
 
   asString() {
@@ -191,8 +192,32 @@ class Fn extends MalValue {
   }
 
   generateEnv(fnArgs) {
-    const [binds, args] = getFilteredBindsAndArgs(this.binds, fnArgs);
+    const [binds, args] = collateParams(this.binds, fnArgs);
     return new Env(this.env, binds, args);
+  }
+
+  apply(context, exps) {
+    return this.closedFn.apply(context, exps);
+  }
+}
+
+class Atom extends MalValue {
+  constructor(value) {
+    super();
+    this.value = value;
+  }
+
+  swap(fn, args) {
+    this.value = fn.apply(null, [this.value, ...args]);
+    return this.value;
+  }
+
+  asString(print_readably) {
+    return `(atom ${
+      this.value instanceof MalValue
+        ? this.value.asString(print_readably)
+        : this.value.toString()
+    })`;
   }
 }
 
@@ -206,4 +231,6 @@ module.exports = {
   Nil,
   Fn,
   MalValue,
+  Atom,
+  collateParams,
 };

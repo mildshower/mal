@@ -10,6 +10,7 @@ const {
   Keyword,
   Nil,
   Fn,
+  collateParams,
 } = require("./types");
 const { Env } = require("./env");
 const core = require("./core");
@@ -22,6 +23,13 @@ const rl = readline.createInterface({
 const repl_env = new Env(null);
 
 Object.entries(core).forEach(([k, v]) => repl_env.set(new Symbol(k), v));
+
+repl_env.set(new Symbol("eval"), (ast) => EVAL(ast, repl_env));
+
+repl_env.set(
+  new Symbol("*ARGV*"),
+  new List(process.argv.slice(3).map((arg) => new Str(arg)))
+);
 
 const eval_ast = (ast, env) => {
   if (ast === undefined) {
@@ -98,15 +106,14 @@ const EVAL = (ast, env) => {
       case "fn*":
         const binds = ast.elements[1].elements;
         const fnBody = ast.elements.slice(2);
-        return new Fn(fnBody, binds, env);
-      // return new Fn((...rawFnArgs) => {
-      //   const [binds, fnArgs] = getFilteredBindsAndArgs(rawBinds, rawFnArgs);
-      //   const enclosedEnv = new Env(env, binds, fnArgs);
-      //   return EVAL(
-      //     new List([new Symbol("do"), ...ast.list.slice(2)]),
-      //     enclosedEnv
-      //   );
-      // });
+
+        const closedFn = (...args) => {
+          const [filteredBinds, filteredArgs] = collateParams(binds, args);
+          const enclosedEnv = new Env(env, filteredBinds, filteredArgs);
+          return EVAL(new List([new Symbol("do"), ...fnBody]), enclosedEnv);
+        };
+
+        return new Fn(fnBody, binds, env, closedFn);
 
       default:
         const evaluatedList = eval_ast(ast, env);
@@ -133,6 +140,10 @@ const rep = (str) => {
 
 rep("(def! not (fn* [a] (if a false true)))");
 
+rep(
+  '(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\\nnil)")))))'
+);
+
 const loop = () => {
   rl.question("user> ", (str) => {
     try {
@@ -146,5 +157,10 @@ const loop = () => {
 };
 
 Function.__proto__.toString = () => "#<function>";
+
+if (process.argv[2] !== undefined) {
+  rep(`(load-file "${process.argv[2]}")`);
+  process.exit();
+}
 
 loop();

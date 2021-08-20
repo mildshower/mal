@@ -101,6 +101,10 @@ const read_vector = (reader) => {
   return new Vector(ast);
 };
 
+const read_deref = (reader) => {
+  return new List([new Symbol("deref"), new Symbol(reader.next())]);
+};
+
 const read_form = (reader) => {
   const token = reader.next();
 
@@ -122,6 +126,9 @@ const read_form = (reader) => {
 
     case "]":
       throw new Error("unbalanced");
+
+    case "@":
+      return read_deref(reader);
 
     default:
       return read_atom(token);

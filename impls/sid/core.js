@@ -8,8 +8,11 @@ const {
   Nil,
   Fn,
   MalValue,
+  Atom,
 } = require("./types");
 const { pr_str } = require("./printer");
+const read_str = require("./reader");
+const { readFileSync } = require("fs");
 
 const core = {
   "+": (...numbers) => numbers.reduce((total, num) => total + num, 0),
@@ -62,6 +65,23 @@ const core = {
   ">": (a, b) => a > b,
 
   ">=": (a, b) => a >= b,
+
+  "read-string": (str) => read_str(str.value),
+
+  slurp: (fileName) => new Str(readFileSync(fileName.value, "utf-8")),
+
+  atom: (value) => new Atom(value),
+
+  "atom?": (exp) => exp instanceof Atom,
+
+  deref: (atom) => atom.value,
+
+  "reset!": (atom, value) => {
+    atom.value = value;
+    return value;
+  },
+
+  "swap!": (atom, fn, ...args) => atom.swap(fn, args),
 };
 
 module.exports = core;
