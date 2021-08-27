@@ -105,6 +105,22 @@ const read_deref = (reader) => {
   return new List([new Symbol("deref"), new Symbol(reader.next())]);
 };
 
+const read_quote = (reader) => {
+  return new List([new Symbol("quote"), read_form(reader)]);
+};
+
+const read_quasiquote = (reader) => {
+  return new List([new Symbol("quasiquote"), read_form(reader)]);
+};
+
+const read_unquote = (reader) => {
+  return new List([new Symbol("unquote"), read_form(reader)]);
+};
+
+const read_splice_unquote = (reader) => {
+  return new List([new Symbol("splice-unquote"), read_form(reader)]);
+};
+
 const read_form = (reader) => {
   const token = reader.next();
 
@@ -129,6 +145,18 @@ const read_form = (reader) => {
 
     case "@":
       return read_deref(reader);
+
+    case "'":
+      return read_quote(reader);
+
+    case "`":
+      return read_quasiquote(reader);
+
+    case "~":
+      return read_unquote(reader);
+
+    case "~@":
+      return read_splice_unquote(reader);
 
     default:
       return read_atom(token);

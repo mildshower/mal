@@ -82,6 +82,12 @@ const core = {
   },
 
   "swap!": (atom, fn, ...args) => atom.swap(fn, args),
+
+  cons: (element, list) => new List([element, ...list.elements]),
+
+  concat: (...lists) => new List(lists.flatMap((_) => _.elements)),
+
+  vec: (sequence) => new Vector(sequence.elements),
 };
 
 module.exports = core;
