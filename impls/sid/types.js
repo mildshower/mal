@@ -20,7 +20,7 @@ class MalValue {
 class Sequence extends MalValue {
   constructor(elements) {
     super();
-    this.elements = elements;
+    this.elements = elements.slice();
   }
 
   isEmpty() {
@@ -227,4 +227,5 @@ module.exports = {
   MalValue,
   Atom,
   collateParams,
+  Sequence,
 };

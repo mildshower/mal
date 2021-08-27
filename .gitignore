@@ -24,3 +24,4 @@ logs
 old
 tmp/
 impls/sid/node_modules
+programs/
