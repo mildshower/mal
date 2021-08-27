@@ -3,16 +3,10 @@ const { Env } = require("./env");
 const collateParams = (rawBinds, rawFnArgs) => {
   let args = rawFnArgs;
   let binds = rawBinds;
-  const ampersandPosition = rawBinds.findIndex((e) => e.symbol === "&");
-  if (ampersandPosition >= 0) {
-    args = [
-      ...args.slice(0, ampersandPosition),
-      new List(args.slice([ampersandPosition])),
-    ];
-    binds = [
-      ...rawBinds.slice(0, ampersandPosition),
-      rawBinds[ampersandPosition + 1],
-    ];
+  const restPos = rawBinds.findIndex((e) => e.symbol === "&");
+  if (restPos >= 0) {
+    args = [...args.slice(0, restPos), new List(args.slice([restPos]))];
+    binds = [...rawBinds.slice(0, restPos), rawBinds[restPos + 1]];
   }
   return [binds, args];
 };
