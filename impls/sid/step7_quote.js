@@ -15,6 +15,7 @@ const {
 } = require("./types");
 const { Env } = require("./env");
 const core = require("./core");
+const { asyncMap, asyncForEach } = require("./asyncHelpers");
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -25,7 +26,7 @@ const repl_env = new Env(null);
 
 Object.entries(core).forEach(([k, v]) => repl_env.set(new Symbol(k), v));
 
-repl_env.set(new Symbol("eval"), (ast) => EVAL(ast, repl_env));
+repl_env.set(new Symbol("eval"), async (ast) => await EVAL(ast, repl_env));
 
 repl_env.set(
   new Symbol("*ARGV*"),
@@ -91,7 +92,7 @@ const quasiquote = (ast) => {
   return ast;
 };
 
-const eval_ast = (ast, env) => {
+const eval_ast = async (ast, env) => {
   if (ast === undefined) {
     return new Nil();
   }
@@ -100,19 +101,21 @@ const eval_ast = (ast, env) => {
     return env.get(ast);
   }
 
+  const evaluate = async (e) => await EVAL(e, env);
+
   if (ast instanceof List) {
-    const resolvedList = ast.elements.map((e) => EVAL(e, env));
+    const resolvedList = await asyncMap(ast.elements, evaluate);
     return new List(resolvedList);
   }
 
   if (ast instanceof Vector) {
-    const resolvedVector = ast.elements.map((e) => EVAL(e, env));
+    const resolvedVector = await asyncMap(ast.elements, evaluate);
     return new Vector(resolvedVector);
   }
 
   if (ast instanceof HashMap) {
-    const resolvedHashMap = ast.toKeyValues().map((e) => EVAL(e, env));
-    return new HashMap(resolvedHashMap);
+    const resolvedKeyValues = await asyncMap(ast.toKeyValues(), evaluate);
+    return new HashMap(resolvedKeyValues);
   }
 
   return ast;
@@ -122,17 +125,18 @@ const READ = (str) => {
   return Reader(str);
 };
 
-const EVAL = (ast, env) => {
+const EVAL = async (ast, env) => {
   while (true) {
-    if (!(ast instanceof List)) return eval_ast(ast, env);
+    if (!(ast instanceof List)) return await eval_ast(ast, env);
 
     if (ast.isEmpty()) return ast;
 
     const firstElement = ast.elements[0].symbol;
+    let evaluate = async (e) => await EVAL(e, env);
 
     switch (firstElement) {
       case "def!":
-        const evaluatedValue = EVAL(ast.elements[2], env);
+        const evaluatedValue = await EVAL(ast.elements[2], env);
         env.setGlobal(ast.elements[1], evaluatedValue);
         return evaluatedValue;
 
@@ -141,17 +145,20 @@ const EVAL = (ast, env) => {
         const keyValues = ast.elements[1].elements;
 
         for (let i = 0; i < keyValues.length; i += 2) {
-          enclosedEnv.set(keyValues[i], EVAL(keyValues[i + 1], enclosedEnv));
+          enclosedEnv.set(
+            keyValues[i],
+            await EVAL(keyValues[i + 1], enclosedEnv)
+          );
         }
 
         env = enclosedEnv;
-
-        ast.elements.slice(2, -1).forEach((x) => EVAL(x, env));
+        evaluate = async (e) => await EVAL(e, env);
+        await asyncForEach(ast.elements.slice(2, -1), evaluate);
         ast = ast.elements[ast.count() - 1];
         break;
 
       case "do":
-        ast.elements.slice(1, -1).forEach((x) => EVAL(x, env));
+        await asyncForEach(ast.elements.slice(1, -1), evaluate);
         ast = ast.elements[ast.count() - 1];
         break;
 
@@ -166,7 +173,7 @@ const EVAL = (ast, env) => {
         break;
 
       case "if":
-        const evaluatedCondition = EVAL(ast.elements[1], env);
+        const evaluatedCondition = await EVAL(ast.elements[1], env);
         ast =
           evaluatedCondition === false || evaluatedCondition instanceof Nil
             ? ast.elements[3]
@@ -177,23 +184,26 @@ const EVAL = (ast, env) => {
         const binds = ast.elements[1].elements;
         const fnBody = ast.elements.slice(2);
 
-        const closedFn = (...args) => {
+        const closedFn = async (...args) => {
           const [filteredBinds, filteredArgs] = collateParams(binds, args);
           const enclosedEnv = new Env(env, filteredBinds, filteredArgs);
-          return EVAL(new List([new Symbol("do"), ...fnBody]), enclosedEnv);
+          const doExp = new List([new Symbol("do"), ...fnBody]);
+          return await EVAL(doExp, enclosedEnv);
         };
 
         return new Fn(fnBody, binds, env, closedFn);
 
       default:
-        const evaluatedList = eval_ast(ast, env);
+        const evaluatedList = await eval_ast(ast, env);
         const fn = evaluatedList.elements[0];
 
         if (!(fn instanceof Fn))
-          return fn.apply(null, evaluatedList.elements.slice(1));
+          return await fn.apply(null, evaluatedList.elements.slice(1));
 
         env = fn.generateEnv(evaluatedList.elements.slice(1));
-        fn.fnBody.slice(0, -1).forEach((x) => EVAL(x, env));
+        evaluate = async (e) => await EVAL(e, env);
+        const fnElements = fn.fnBody.slice(0, -1);
+        asyncForEach(fnElements, evaluate);
         ast = fn.fnBody[fn.fnBody.length - 1];
         break;
     }
@@ -204,20 +214,14 @@ const PRINT = (ast) => {
   return pr_str(ast, true);
 };
 
-const rep = (str) => {
-  return PRINT(EVAL(READ(str), repl_env));
+const rep = async (str) => {
+  return PRINT(await EVAL(READ(str), repl_env));
 };
 
-rep("(def! not (fn* [a] (if a false true)))");
-
-rep(
-  '(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\\nnil)")))))'
-);
-
 const loop = () => {
-  rl.question("user> ", (str) => {
+  rl.question("user> ", async (str) => {
     try {
-      console.log(rep(str));
+      console.log(await rep(str));
     } catch (e) {
       console.log(e);
     } finally {
@@ -228,9 +232,21 @@ const loop = () => {
 
 Function.__proto__.toString = () => "#<function>";
 
-if (process.argv[2] !== undefined) {
-  rep(`(load-file "${process.argv[2]}")`);
-  process.exit();
-}
+const run = async () => {
+  await rep("(def! not (fn* [a] (if a false true)))");
 
-loop();
+  await rep(
+    '(def! load-file (fn* (f) (eval (read-string (str "(do " (slurp f) "\\nnil)")))))'
+  );
+
+  await rep("(def! zero? (fn* [a] (= a 0)))");
+
+  if (process.argv[2] !== undefined) {
+    await rep(`(load-file "${process.argv[2]}")`);
+    process.exit(0);
+  }
+
+  loop();
+};
+
+run();

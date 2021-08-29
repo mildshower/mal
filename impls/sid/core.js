@@ -1,7 +1,8 @@
+const readline = require("readline");
 const {
   List,
   Str,
-  Symbol,
+  Symbol: MalSymbol,
   Vector,
   HashMap,
   Keyword,
@@ -13,6 +14,15 @@ const {
 const { pr_str } = require("./printer");
 const read_str = require("./reader");
 const { readFileSync } = require("fs");
+
+const rl = readline.createInterface({
+  input: process.stdin,
+});
+
+const nextLine = () =>
+  new Promise((resolve) => {
+    rl.question("", resolve);
+  });
 
 const core = {
   "+": (...numbers) => numbers.reduce((total, num) => total + num, 0),
@@ -81,13 +91,17 @@ const core = {
     return value;
   },
 
-  "swap!": (atom, fn, ...args) => atom.swap(fn, args),
+  "swap!": async (atom, fn, ...args) => await atom.swap(fn, args),
 
   cons: (element, list) => new List([element, ...list.elements]),
 
   concat: (...lists) => new List(lists.flatMap((_) => _.elements)),
 
   vec: (sequence) => new Vector(sequence.elements),
+
+  mod: (dividend, divisor) => dividend % divisor,
+
+  "read-line": async () => new Str(await nextLine()),
 };
 
 module.exports = core;

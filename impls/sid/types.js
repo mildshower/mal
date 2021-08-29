@@ -190,8 +190,8 @@ class Fn extends MalValue {
     return new Env(this.env, binds, args);
   }
 
-  apply(context, exps) {
-    return this.closedFn.apply(context, exps);
+  async apply(context, exps) {
+    return await this.closedFn.apply(context, exps);
   }
 }
 
@@ -201,8 +201,8 @@ class Atom extends MalValue {
     this.value = value;
   }
 
-  swap(fn, args) {
-    this.value = fn.apply(null, [this.value, ...args]);
+  async swap(fn, args) {
+    this.value = await fn.apply(null, [this.value, ...args]);
     return this.value;
   }
 
