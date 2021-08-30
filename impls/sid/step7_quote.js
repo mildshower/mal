@@ -1,5 +1,5 @@
 const readline = require("readline");
-const Reader = require("./reader");
+const { read_str: Reader, prepend_symbol } = require("./reader");
 const { pr_str } = require("./printer");
 const {
   List,
@@ -44,6 +44,8 @@ const isSpliceUnquote = startsWithSymbol.bind(null, "splice-unquote");
 
 const isUnquote = startsWithSymbol.bind(null, "unquote");
 
+const isFnDef = startsWithSymbol.bind(null, "fn*");
+
 //*************************Recursion Based******************************* */
 
 // const quasiquoteList = (ast) => {
@@ -62,14 +64,14 @@ const isUnquote = startsWithSymbol.bind(null, "unquote");
 const quasiquoteList = (ast) => {
   let result = new List([]);
 
-  ast.elements
-    .slice()
-    .reverse()
-    .forEach((elt) => {
-      if (isSpliceUnquote(elt))
-        result = new List([new Symbol("concat"), elt.elements[1], result]);
-      else result = new List([new Symbol("cons"), quasiquote(elt), result]);
-    });
+  const reverseElements = ast.elements.slice().reverse();
+  reverseElements.forEach((elt) => {
+    if (isSpliceUnquote(elt)) {
+      result = prepend_symbol("concat", elt.elements[1], result);
+    } else {
+      result = prepend_symbol("cons", quasiquote(elt), result);
+    }
+  });
 
   return result;
 };
@@ -180,7 +182,7 @@ const EVAL = (ast, env) => {
         const closedFn = (...args) => {
           const [filteredBinds, filteredArgs] = collateParams(binds, args);
           const enclosedEnv = new Env(env, filteredBinds, filteredArgs);
-          return EVAL(new List([new Symbol("do"), ...fnBody]), enclosedEnv);
+          return EVAL(prepend_symbol("do", ...fnBody), enclosedEnv);
         };
 
         return new Fn(fnBody, binds, env, closedFn);
@@ -195,7 +197,6 @@ const EVAL = (ast, env) => {
         env = fn.generateEnv(evaluatedList.elements.slice(1));
         fn.fnBody.slice(0, -1).forEach((x) => EVAL(x, env));
         ast = fn.fnBody[fn.fnBody.length - 1];
-        break;
     }
   }
 };

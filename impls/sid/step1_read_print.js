@@ -1,5 +1,5 @@
 const readline = require("readline");
-const Reader = require("./reader");
+const { read_str: Reader } = require("./reader");
 const { pr_str } = require("./printer");
 
 const rl = readline.createInterface({

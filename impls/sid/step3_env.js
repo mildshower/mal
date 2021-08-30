@@ -1,5 +1,5 @@
 const readline = require("readline");
-const Reader = require("./reader");
+const { read_str: Reader } = require("./reader");
 const { pr_str } = require("./printer");
 const { List, Str, Symbol, Vector, HashMap, Keyword, Nil } = require("./types");
 const { Env } = require("./env");

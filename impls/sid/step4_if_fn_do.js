@@ -1,5 +1,5 @@
 const readline = require("readline");
-const Reader = require("./reader");
+const { read_str: Reader } = require("./reader");
 const { pr_str } = require("./printer");
 const {
   List,
@@ -134,7 +134,7 @@ const rep = (str) => {
   return PRINT(EVAL(READ(str), repl_env));
 };
 
-rep("(def! not (fn* [a] (if a false true)))")
+rep("(def! not (fn* [a] (if a false true)))");
 
 const loop = () => {
   rl.question("user> ", (str) => {

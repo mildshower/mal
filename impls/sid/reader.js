@@ -101,24 +101,28 @@ const read_vector = (reader) => {
   return new Vector(ast);
 };
 
+const prepend_symbol = (symbol, ...rest) => {
+  return new List([new Symbol(symbol), ...rest]);
+};
+
 const read_deref = (reader) => {
-  return new List([new Symbol("deref"), new Symbol(reader.next())]);
+  return prepend_symbol("deref", new Symbol(reader.next()));
 };
 
 const read_quote = (reader) => {
-  return new List([new Symbol("quote"), read_form(reader)]);
+  return prepend_symbol("quote", read_form(reader));
 };
 
 const read_quasiquote = (reader) => {
-  return new List([new Symbol("quasiquote"), read_form(reader)]);
+  return prepend_symbol("quasiquote", read_form(reader));
 };
 
 const read_unquote = (reader) => {
-  return new List([new Symbol("unquote"), read_form(reader)]);
+  return prepend_symbol("unquote", read_form(reader));
 };
 
 const read_splice_unquote = (reader) => {
-  return new List([new Symbol("splice-unquote"), read_form(reader)]);
+  return prepend_symbol("splice-unquote", read_form(reader));
 };
 
 const read_form = (reader) => {
@@ -169,4 +173,4 @@ const read_str = (str) => {
   return read_form(reader);
 };
 
-module.exports = read_str;
+module.exports = {read_str, prepend_symbol};
