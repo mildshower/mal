@@ -5,3 +5,78 @@
 (defmacro! if-not (fn* [exp form1 form2] `(if ~exp ~form2 ~form1)))
 
 (defmacro! defn! (fn* [name args & forms] `(def! ~name (fn* ~args ~@forms))))
+
+(defn! reduce [reducer init seq]
+  (if (zero? (count seq))
+    init 
+    (reduce reducer (reducer init (first seq)) (rest seq))))
+
+(defn! map [mapper seq]
+  (reduce (fn* [init elt] (concat init (list (mapper elt))))
+          '()
+          seq))
+
+(defn! filter [predicate seq]
+  (reduce (fn* [init elt] (if (predicate elt) (concat init (list elt)) init))
+          '()
+          seq))
+
+(defn! inc [a] (+ a 1))
+
+(defn! even? [a] (zero? (mod a 2)))
+
+(defn! empty? [seq] (zero? (count seq)))
+
+(defn! div-by? [a b] (zero? (mod a b)))
+
+(defn! some? [predicate seq] 
+  (if (empty? seq)
+    false
+    (if (predicate (first seq)) 
+      true
+      (if (= (count seq) 1) 
+        false 
+        (some? predicate (rest seq))))))
+
+(defn! every? [predicate seq]
+  (if (empty? seq)
+    false
+    (if (predicate (first seq))
+      (if (= (count seq) 1)
+        true
+        (every? predicate (rest seq)))
+      false)))
+
+(defmacro! or (fn* [first-elt & others]
+                   (if (empty? others)
+                     first-elt
+                     (if first-elt
+                       first-elt
+                       `(or ~@others)))))
+
+(defmacro! and (fn* [first-elt & others]
+                    (if (empty? others)
+                      first-elt
+                      (if first-elt
+                        `(and ~@others)
+                        first-elt))))
+
+(defmacro! condp (fn* [predicate exp & conds]
+                      (cond
+                        (empty? conds) nil
+                        (= (count conds) 1) (first conds)
+                        :else `(if (~predicate ~(first conds) ~exp)
+                                ~(nth conds 1)
+                                (condp ~predicate ~exp ~@(rest (rest conds)))))))
+
+(defmacro! -> (fn* [first-elt & others]
+                   (if (empty? others)
+                     first-elt
+                     `(-> (~(first (first others)) ~first-elt ~@(rest (first others)))
+                          ~@(rest others)))))
+
+(defmacro! ->> (fn* [first-elt & others]
+                   (if (empty? others)
+                     first-elt
+                     `(->> (~(first (first others)) ~@(rest (first others)) ~first-elt)
+                          ~@(rest others)))))
