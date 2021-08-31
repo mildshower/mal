@@ -1,0 +1,7 @@
+(def! not (fn* [a] (if a false true)))
+
+(def! zero? (fn* [num] (= num 0)))
+
+(defmacro! if-not (fn* [exp form1 form2] `(if ~exp ~form2 ~form1)))
+
+(defmacro! defn! (fn* [name args & forms] `(def! ~name (fn* ~args ~@forms))))

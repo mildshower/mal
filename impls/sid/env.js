@@ -25,6 +25,12 @@ class Env {
 
     return this.outer.get(key);
   }
+
+  has(key) {
+    if (this.data[key.symbol] !== undefined) return true;
+
+    return this.outer && this.outer.has(key);
+  }
 }
 
 module.exports = { Env };

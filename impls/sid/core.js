@@ -11,7 +11,7 @@ const {
   Atom,
 } = require("./types");
 const { pr_str } = require("./printer");
-const read_str = require("./reader");
+const { read_str } = require("./reader");
 const { readFileSync } = require("fs");
 
 const core = {
@@ -90,6 +90,20 @@ const core = {
   vec: (sequence) => new Vector(sequence.elements),
 
   mod: (dividend, divisor) => dividend % divisor,
+
+  nth: (seq, index) => {
+    const elt = seq.elements[index];
+
+    if (elt === undefined) throw new Error("Out of Index");
+
+    return elt;
+  },
+
+  first: (seq) =>
+    seq instanceof Nil || seq.count() === 0 ? new Nil() : seq.elements[0],
+
+  rest: (seq) =>
+    seq instanceof Nil ? new List([]) : new List(seq.elements.slice(1)),
 };
 
 module.exports = core;

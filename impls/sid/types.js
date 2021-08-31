@@ -179,6 +179,7 @@ class Fn extends MalValue {
     this.binds = binds;
     this.env = env;
     this.closedFn = closedFn;
+    this.isMacro = false;
   }
 
   asString() {
