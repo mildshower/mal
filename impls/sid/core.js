@@ -9,6 +9,7 @@ const {
   Fn,
   MalValue,
   Atom,
+  Sequence,
 } = require("./types");
 const { pr_str } = require("./printer");
 const { read_str } = require("./reader");
@@ -94,7 +95,7 @@ const core = {
   nth: (seq, index) => {
     const elt = seq.elements[index];
 
-    if (elt === undefined) throw new Error("Out of Index");
+    if (elt === undefined) throw new Error("Index out of range");
 
     return elt;
   },
@@ -104,6 +105,35 @@ const core = {
 
   rest: (seq) =>
     seq instanceof Nil ? new List([]) : new List(seq.elements.slice(1)),
+
+  throw: (e) => {
+    throw e;
+  },
+
+  apply: (fn, ...args) =>
+    fn.apply(null, [
+      ...args.slice(0, args.length - 1),
+      ...args[args.length - 1].elements,
+    ]),
+
+  "nil?": (a) => a instanceof Nil,
+  "true?": (a) => a === true,
+  "false?": (a) => a === false,
+  "symbol?": (a) => a instanceof Symbol,
+  symbol: (str) => new Symbol(str.value),
+  keyword: (a) => (a instanceof Keyword ? a : new Keyword(a.value)),
+  "keyword?": (a) => a instanceof Keyword,
+  "vector?": (a) => a instanceof Vector,
+  vector: (...elements) => new Vector(elements),
+  "sequential?": (a) => a instanceof Sequence,
+  "hash-map": (...keyValues) => new HashMap(keyValues),
+  "map?": (a) => a instanceof HashMap,
+  keys: (a) => a.keys(),
+  vals: (a) => a.vals(),
+  get: (map, key) => (map instanceof Nil ? new Nil() : map.get(key)),
+  "contains?": (map, key) => map.contains(key),
+  assoc: (map, ...keyValues) => map.assoc(keyValues),
+  dissoc: (map, ...keys) => map.dissoc(keys),
 };
 
 module.exports = core;

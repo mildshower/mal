@@ -94,41 +94,153 @@ class Vector extends Sequence {
   }
 }
 
+// class HashMap extends MalValue {
+//   constructor(keyValues) {
+//     super();
+//     this.hashMap = new Map();
+
+//     for (let i = 0; i < keyValues.length; i += 2) {
+//       this.hashMap.set(keyValues[i], keyValues[i + 1]);
+//     }
+//   }
+
+//   toKeyValues() {
+//     const keyValues = [];
+//     this.hashMap.forEach((v, k) => keyValues.push(k, v));
+//     return keyValues;
+//   }
+
+//   asString(print_readably) {
+//     return `{${[...this.hashMap.entries()]
+//       .map(
+//         ([k, v]) =>
+//           `${
+//             k instanceof MalValue ? k.asString(print_readably) : k.toString()
+//           } ${
+//             v instanceof MalValue ? v.asString(print_readably) : v.toString()
+//           }`
+//       )
+//       .join(" ")}}`;
+//   }
+
+//   isEmpty() {
+//     return this.hashMap.size === 0;
+//   }
+
+//   count() {
+//     return this.hashMap.size;
+//   }
+
+//   keys() {
+//     return new List([...this.hashMap.keys()]);
+//   }
+
+//   vals() {
+//     return new List([...this.hashMap.values()]);
+//   }
+// }
+
+const ValidateKey = (key) => {
+  if (!(key instanceof Str || key instanceof Keyword))
+    throw new Error("Key is not string or keyword");
+};
+
+const toMalKey = (key) =>
+  key.startsWith(":") ? new Keyword(key.slice(1)) : new Str(key.slice(1));
+
+const toJsKey = (key) =>
+  key instanceof Str ? `-${key.value}` : key.asString();
+
+const isSameMapValue = (map1, map2) => {
+  return Object.entries(map1).every(([k1, v1]) => {
+    return v1 instanceof MalValue ? v1.isEqual(map2[k1]) : v1 === map2[k1];
+  });
+};
+
 class HashMap extends MalValue {
   constructor(keyValues) {
     super();
-    this.hashMap = new Map();
+    this.hashMap = {};
 
     for (let i = 0; i < keyValues.length; i += 2) {
-      this.hashMap.set(keyValues[i], keyValues[i + 1]);
+      ValidateKey(keyValues[i]);
+      this.hashMap[toJsKey(keyValues[i])] = keyValues[i + 1];
     }
   }
 
   toKeyValues() {
     const keyValues = [];
-    this.hashMap.forEach((v, k) => keyValues.push(k, v));
+    Object.entries(this.hashMap).forEach(([k, v]) =>
+      keyValues.push(toMalKey(k), v)
+    );
     return keyValues;
   }
 
   asString(print_readably) {
-    return `{${[...this.hashMap.entries()]
-      .map(
-        ([k, v]) =>
-          `${
-            k instanceof MalValue ? k.asString(print_readably) : k.toString()
-          } ${
-            v instanceof MalValue ? v.asString(print_readably) : v.toString()
-          }`
-      )
+    return `{${Object.entries(this.hashMap)
+      .map(([k, v]) => {
+        k = toMalKey(k);
+        return `${k.asString(print_readably)} ${
+          v instanceof MalValue ? v.asString(print_readably) : v.toString()
+        }`;
+      })
       .join(" ")}}`;
   }
 
-  isEmpty() {
-    return this.hashMap.size === 0;
+  keys() {
+    return new List(Object.keys(this.hashMap).map(toMalKey));
+  }
+
+  vals() {
+    return new List(Object.values(this.hashMap));
   }
 
   count() {
-    return this.hashMap.size;
+    return this.keys().elements.length;
+  }
+
+  isEmpty() {
+    return this.count() === 0;
+  }
+
+  isEqual(other) {
+    if (other === this) return true;
+
+    return (
+      other instanceof HashMap &&
+      this.count() === other.count() &&
+      isSameMapValue(this.hashMap, other.hashMap)
+    );
+  }
+
+  get(key) {
+    ValidateKey(key);
+    const val = this.hashMap[toJsKey(key)];
+
+    if (val === undefined) return new Nil();
+
+    return val;
+  }
+
+  contains(key) {
+    ValidateKey(key);
+    const val = this.hashMap[toJsKey(key)];
+
+    return !(val === undefined);
+  }
+
+  assoc(keyValues) {
+    return new HashMap([...this.toKeyValues(), ...keyValues]);
+  }
+
+  dissoc(keys) {
+    keys.forEach(ValidateKey);
+    const keyValues = [];
+    Object.entries(this.hashMap).forEach(([k, v]) => {
+      if (keys.some((_) => toJsKey(_) === k)) return;
+      keyValues.push(toMalKey(k), v);
+    });
+    return new HashMap(keyValues);
   }
 }
 

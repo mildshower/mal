@@ -21,7 +21,7 @@ class Env {
 
     if (value !== undefined) return value;
 
-    if (!this.outer) throw new Error(`'${key.symbol}' not found.`);
+    if (!this.outer) throw new Error(`'${key.symbol}' not found`);
 
     return this.outer.get(key);
   }
