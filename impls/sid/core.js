@@ -1,3 +1,4 @@
+const readline = require("readline");
 const {
   List,
   Str,
@@ -14,6 +15,16 @@ const {
 const { pr_str } = require("./printer");
 const { read_str } = require("./reader");
 const { readFileSync } = require("fs");
+
+const rl = readline.createInterface({
+  input: process.stdin,
+});
+
+const getLine = (prompt) =>
+  new Promise((resolve) => {
+    process.stdout.write(prompt);
+    rl.question(prompt, (str) => resolve(str));
+  });
 
 const core = {
   "+": (...numbers) => numbers.reduce((total, num) => total + num, 0),
@@ -82,7 +93,7 @@ const core = {
     return value;
   },
 
-  "swap!": (atom, fn, ...args) => atom.swap(fn, args),
+  "swap!": async (atom, fn, ...args) => await atom.swap(fn, args),
 
   cons: (element, list) => new List([element, ...list.elements]),
 
@@ -134,6 +145,48 @@ const core = {
   "contains?": (map, key) => map.contains(key),
   assoc: (map, ...keyValues) => map.assoc(keyValues),
   dissoc: (map, ...keys) => map.dissoc(keys),
+
+  readline: async (prompt) =>
+    new Str(await getLine(prompt ? prompt.value : "")),
+
+  "fn?": (a) => (a instanceof Fn && !a.isMacro) || a instanceof Function,
+  "string?": (a) => a instanceof Str,
+  "number?": (a) => typeof a === "number",
+  "macro?": (a) => a instanceof Fn && a.isMacro,
+
+  seq: (seq) => {
+    if (
+      seq instanceof Nil ||
+      (seq instanceof Str && seq.value === "") ||
+      (seq instanceof Sequence && seq.isEmpty())
+    )
+      return new Nil();
+
+    if (seq instanceof Str)
+      return new List(seq.value.split("").map((s) => new Str(s)));
+
+    if (seq instanceof List) return seq;
+
+    return new List(seq.elements);
+  },
+
+  conj: (seq, ...elements) => {
+    if (seq instanceof List)
+      return new List([...elements.slice().reverse(), ...seq.elements]);
+
+    return new Vector([...seq.elements, ...elements]);
+  },
+
+  "time-ms": () => +new Date(),
+  meta: (a) => a.metaData,
+
+  "with-meta": (a, meta) => {
+    if (a instanceof Function) a = (...args) => a(...args);
+    else a = a.clone();
+
+    a.metaData = meta;
+    return a;
+  },
 };
 
 module.exports = core;

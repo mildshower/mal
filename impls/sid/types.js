@@ -21,6 +21,7 @@ class Sequence extends MalValue {
   constructor(elements) {
     super();
     this.elements = elements.slice();
+    this.metaData = new Nil();
   }
 
   isEmpty() {
@@ -62,6 +63,10 @@ class List extends Sequence {
   asString(print_readably) {
     return super.asString(print_readably, "(", ")");
   }
+
+  clone() {
+    return new List(this.elements);
+  }
 }
 
 class Str extends MalValue {
@@ -91,6 +96,10 @@ class Vector extends Sequence {
 
   asString(print_readably) {
     return super.asString(print_readably, "[", "]");
+  }
+
+  clone() {
+    return new Vector(this.elements);
   }
 }
 
@@ -161,6 +170,7 @@ class HashMap extends MalValue {
   constructor(keyValues) {
     super();
     this.hashMap = {};
+    this.metaData = new Nil();
 
     for (let i = 0; i < keyValues.length; i += 2) {
       ValidateKey(keyValues[i]);
@@ -242,6 +252,10 @@ class HashMap extends MalValue {
     });
     return new HashMap(keyValues);
   }
+
+  clone() {
+    return new HashMap(this.toKeyValues());
+  }
 }
 
 class Symbol extends MalValue {
@@ -292,6 +306,7 @@ class Fn extends MalValue {
     this.env = env;
     this.closedFn = closedFn;
     this.isMacro = false;
+    this.metaData = new Nil();
   }
 
   asString() {
@@ -303,8 +318,15 @@ class Fn extends MalValue {
     return new Env(this.env, binds, args);
   }
 
-  apply(context, exps) {
-    return this.closedFn.apply(context, exps);
+  async apply(context, exps) {
+    return await this.closedFn.apply(context, exps);
+  }
+
+  clone() {
+    const newFn = new Fn(this.fnBody, this.binds, this.env, this.closedFn);
+    newFn.metaData = this.metaData;
+    newFn.isMacro = this.isMacro;
+    return newFn;
   }
 }
 
@@ -314,8 +336,8 @@ class Atom extends MalValue {
     this.value = value;
   }
 
-  swap(fn, args) {
-    this.value = fn.apply(null, [this.value, ...args]);
+  async swap(fn, args) {
+    this.value = await fn.apply(null, [this.value, ...args]);
     return this.value;
   }
 

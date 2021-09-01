@@ -125,6 +125,12 @@ const read_splice_unquote = (reader) => {
   return prepend_symbol("splice-unquote", read_form(reader));
 };
 
+const read_with_meta = (reader) => {
+  const meta = read_form(reader);
+  const val = read_form(reader);
+  return prepend_symbol("with-meta", val, meta);
+};
+
 const read_form = (reader) => {
   const token = reader.next();
 
@@ -162,6 +168,9 @@ const read_form = (reader) => {
     case "~@":
       return read_splice_unquote(reader);
 
+    case "^":
+      return read_with_meta(reader);
+
     default:
       return read_atom(token);
   }
@@ -173,4 +182,4 @@ const read_str = (str) => {
   return read_form(reader);
 };
 
-module.exports = {read_str, prepend_symbol};
+module.exports = { read_str, prepend_symbol };
